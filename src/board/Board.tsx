@@ -3,156 +3,94 @@ import * as React from "react";
 import Tile from "./Tile";
 import styled from "styled-components";
 import AutoBind from '../AutoBind';
+import {DragDropContextProvider} from "react-dnd";
+import HTML5Backend from "react-dnd-html5-backend";
+
+interface IGameBorder {
+    children?: any,
+    className: string,
+    height: number,
+    width: number
+}
 
 interface IBoardProps {
     height: number,
     width: number,
-    spritePath: string
 }
 
-interface IBoardState {
-    mouseDown: boolean,
-    tileMatrix: boolean[][];
-}
-
-const TileRow = styled.div`
+const SGameEdge = styled(GameEdge)`
+    min-height: ${props => props.height + "px"};
+    max-height: ${props => props.height + "px"};
+    min-width: ${props => props.width + "px"};
+    max-width: ${props => props.width + "px"};
+    
     display: flex;
-    margin: auto;
-    width: 57%;
+    border-style: solid;
+    border-width: 5px;
+    border-color: #335566;
 `;
 
-export default class Board extends Component<IBoardProps, IBoardState> {
-    constructor(props: any) {
+const SBoardBorder = styled(SGameEdge)`
+    border-width: 0px 5px 5px 5px;
+`;
+
+function GameEdge(props: IGameBorder) {
+    return (
+        <div className={props.className}>
+            {props.children}
+        </div>
+    );
+}
+
+export default class Board extends Component<IBoardProps> {
+    constructor(props: IBoardProps) {
         super(props);
-
-        let tileMatrix = new Array(this.props.height);
-        let tileMatrixRow = new Array(this.props.width);
-        tileMatrixRow.fill(false);
-        tileMatrix.fill(tileMatrixRow);
-
-        this.state = {mouseDown: false, tileMatrix: tileMatrix};
-
         AutoBind.autoBind(this);
     }
 
-    handleMouseDown() {
-        this.setState({mouseDown: true});
-    }
+    generateGameTiles(): Array<JSX.Element> {
+        let gameTiles: Array<JSX.Element> = [];
+        let id = 0;
 
-    handleMouseUp() {
-        this.setState({mouseDown: false});
-    }
+        for (let column = 0; column < this.props.width; ++ column) {
+            let col: Array<JSX.Element> = [];
 
-    pressTile(press: Function) {
-        if (this.state.mouseDown) {
-            press();
-        }
-    }
-
-    generateRow(sprite: string): Array<JSX.Element> {
-        let row: Array<JSX.Element> = [];
-        let spritePath = this.props.spritePath + sprite + ".png";
-        let keyID = 0;
-
-        for (let column = 0; column < this.props.width; ++column) {
-            row.push(<img src={spritePath} key={sprite + keyID} />);
-            keyID++;
-        }
-
-        return row;
-    }
-
-    generateBoard(): Array<JSX.Element> {
-        let board: Array<JSX.Element> = [];
-        let spritePath = this.props.spritePath;
-        const barVertical = spritePath + "bar_vertical.png";
-
-        // Generate top border
-        board.push((
-           <TileRow
-                key={"top_border_div"}>
-                <img src={spritePath + "corner_topleft.png"}
-                     key={"corner_topleft"} />
-               {this.generateRow("bar_horizontal")}
-               <img src={spritePath + "corner_topright.png"}
-                    key={"corner_topright"} />
-           </TileRow>
-        ));
-
-        // Generate header blank rows
-        const blankRows = 3;
-        let rowKey = 0;
-        for (let row = 0; row < blankRows; ++row) {
-            board.push((
-               <TileRow
-                    key={"left_div" + rowKey}>
-                   <img src={barVertical}
-                        key={"left_bar" + rowKey} />
-                   {this.generateRow("blank")}
-                   <img src={barVertical}
-                        key={"right_bar" + rowKey} />
-               </TileRow>
-            ));
-
-            rowKey++;
-        }
-
-        // Generate middle border
-        board.push((
-           <TileRow key={"div_middle_border"}>
-               <img src={spritePath + "joint_left.png"}
-                    key={"joint_left"} />
-               {this.generateRow("bar_horizontal")}
-               <img src={spritePath + "joint_right.png"}
-                    key={"joint_right"} />
-           </TileRow>
-        ));
-
-        // Generate game tile rows
-        for (let row = 0; row < this.props.height; row++) {
-            let row: Array<JSX.Element> = [];
-
-            for (let column = 0; column < this.props.width; column++) {
-                row.push(<Tile key={"tile" + rowKey}
-                               pressed={false}
-                               />);
-                rowKey++;
+            for (let row = 0; row < this.props.height; ++row) {
+                col.push(<Tile key={id} id={id}/>);
+                id++;
             }
 
-            let barVertical = spritePath + "bar_vertical.png";
-            board.push((
-                <TileRow key={"row_div" + rowKey}>
-                    <img src={barVertical}
-                         key={"bar_vertical_left" + rowKey} />
-                    {row}
-                    <img src={barVertical}
-                         key={"bar_vertical_right" + rowKey} />
-                </TileRow>
-            ));
+            gameTiles.push(
+                (<div key={"div" + id}>{col}</div>)
+            );
         }
 
-        // Generate bottom border
-        board.push((
-            <TileRow key={"bottom_div"}>
-                <img src={spritePath + "corner_bottomleft.png"}
-                     key={"corner_bottomleft"} />
-                {this.generateRow("bar_horizontal")}
-                <img src={spritePath + "corner_bottomright.png"}
-                     key={"corner_bottomright"} />
-            </TileRow>
-        ));
-
-        return board;
+        return gameTiles;
     }
 
     render() {
-        return (
-            <div
-                key={"board"}
-                onMouseDown={this.handleMouseDown}
-                onMouseUp={this.handleMouseUp}>
-                {this.generateBoard()}
-            </div>
-        );
+        let headerWidth = (this.props.width * 24);
+        let headerHeight = 50;
+
+        let gameBoardWidth = headerWidth;
+        let gameBoardHeight = (this.props.height * 24);
+
+        let gameWidth = headerWidth;
+        let gameHeight = headerHeight + gameBoardHeight;
+
+       return  (
+           <>
+               <SGameEdge width={headerWidth}
+                          height={headerHeight}
+                          className={"SHeaderBorder"}>
+
+               </SGameEdge>
+               <SBoardBorder width={gameBoardWidth}
+                             height={gameBoardHeight}
+                             className={"SBoardBorder"}>
+                   {this.generateGameTiles()}
+               </SBoardBorder>
+           </>
+       );
     }
 }

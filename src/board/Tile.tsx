@@ -1,20 +1,23 @@
-import {Component} from "react";
+import {useState} from "react";
 import * as React from "react";
-import AutoBind from "../AutoBind";
-import './Tile.css';
 import styled, {StyledComponent} from "styled-components";
+import { DragSource } from "react-dnd";
+import {ItemTypes} from "./Constants";
+import {DragSourceConnector, DragSourceMonitor, useDrag} from "react-dnd/lib/esm";
 
 interface ITileProps {
-    pressed: boolean
+    id: number
 }
 
+
 interface ITileState {
-    style: StyledComponent<"div", any>,
+    style: StyledComponent<"div", any>;
 }
 
 const GameTile = styled.div`
-    background-color: #998099;
+    background-color: lightblue;
     outline: none;
+    display: flex;
 `;
 
 const Pressed = styled(GameTile)`
@@ -23,41 +26,50 @@ const Pressed = styled(GameTile)`
     min-width: 23px;
     max-width: 23px;
     
+    background-color: grey;
     border-width: 1px 0px 0px 1px;
     border-style: solid;
-    border-color: #335566;
+    border-color: #000000;
 `;
 
 const Unpressed = styled(GameTile)`
-    min-height: 18px;
-    max-height; 18px;
-    min-width: 18px;
-    max-width: 18px;
-
-    border-width: 3px;
+    min-height: 23px;
+    max-height: 23px;
+    min-width: 23px;
+    max-width: 23px;
+    
+    border-width: 1px 0px 0px 1px;
     border-style: solid;
-    border-color: #99aacc #335566 #335566 #99aacc;
+    border-color: #90b9c8;
 `;
 
-export default class Tile extends Component<ITileProps, ITileState> {
-    constructor(props: ITileProps) {
-        super(props);
+export default function Tile(props: ITileProps) {
+    const [pressed, setPressed] = useState(false);
+    /*const [{ isDragging }, drag] = useDrag({
+        item: { id: props.id, type: ItemTypes.GAME_TILE },
 
-        if (this.props.pressed) {
-            this.state = {style: Pressed};
+        end: (dropResult?: { id: string }) => {
+            if (dropResult) {
+                alert(`You dropped ${props.id} into ${dropResult.id}!`)
+            }
+        },
 
-        } else {
-            this.state = {style: Unpressed};
-        }
+        collect: monitor => ({
+            isDragging: monitor.isDragging()
+        })
+    });*/
+
+    function handleClick(e: any) {
+        e.preventDefault();
+        setPressed(true);
     }
 
-    render() {
-        let style = this.state.style;
-
-        return (
-            <GameTile
-                as={style}
-                />
-        );
-    }
+    //console.log(typeof drag)
+    return (
+        <GameTile
+            as={pressed ? Pressed : Unpressed}
+            onClick={e => handleClick(e)}
+            />
+    );
 }
+
